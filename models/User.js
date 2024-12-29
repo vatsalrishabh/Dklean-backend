@@ -19,7 +19,8 @@ const UserSchema = new mongoose.Schema({
   mobile: { type: String },
   gender: { type: String, enum: ['male', 'female', 'prefer not to say'] },
   address: AddressSchema,
-  age: { type: Number } // Age is defined as a number
+  age: { type: Number },
+  blocked: {type:Boolean, required:true, default:false},
 });
 
 const User = mongoose.model('User', UserSchema);

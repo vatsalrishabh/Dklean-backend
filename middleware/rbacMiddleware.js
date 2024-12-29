@@ -4,7 +4,7 @@ const SECRET_KEY = process.env.JWT_SECRET; // Replace with your actual secret ke
 // Middleware to verify JWT
 const authenticateJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
+console.log(req.headers)
   if (!authHeader) {
     return res.status(403).json({ message: 'Authorization header missing' });
   }

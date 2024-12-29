@@ -15,22 +15,39 @@ const sendOtpEmailForgot = (to, otp, subject) => {
         from: process.env.PulseCareEmail, // Sender email address
         to, // Recipient email address
         subject: subject, // Email subject
-        text: `Your OTP to reset your password is: ${otp}. Please use this OTP to reset your password.`,
         html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <h2 style="color: #4CAF50;">PulseCare Password Reset</h2>
-                <p>Dear User,</p>
-                <p>We received a request to reset your password. Please use the One-Time Password (OTP) provided below to complete the process.</p>
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="color: #4CAF50; text-align: center; margin-bottom: 20px;">Dklean Password Reset</h2>
+                <p style="font-size: 16px;">Dear User,</p>
+                <p style="font-size: 16px; margin-bottom: 20px;">We received a request to reset your password. Please use the One-Time Password (OTP) provided below to complete the process.</p>
                 <div style="text-align: center; margin: 20px 0;">
-                    <span style="font-size: 24px; color: #4CAF50; font-weight: bold;">Your OTP: ${otp}</span>
+                    <span style="
+                        font-size: 24px;
+                        color: #4CAF50;
+                        font-weight: bold;
+                        background-color: #e8f5e9;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        display: inline-block;
+                        animation: fadeIn 2s;
+                    ">
+                        ${otp}
+                    </span>
                 </div>
-                <p>If you did not request a password reset, please ignore this email.</p>
-                <p style="text-align: center; margin: 20px 0;">
-                    <img src="https://t4.ftcdn.net/jpg/03/33/90/67/360_F_333906704_JFXLTAImnaXTxpNJZYOmMQL2hx80zTG8.jpg" alt="PulseCare" style="width: 100%; max-width: 400px; border-radius: 10px;" />
-                </p>
-                <p>If you have any issues, please contact PulseCare support.</p>
-                <p style="color: #777;">Best regards,<br/>The PulseCare Team</p>
+                <p style="font-size: 16px;">If you did not request a password reset, please ignore this email.</p>
+                <p style="font-size: 16px; margin-top: 20px;">If you have any issues, please contact Dklean support.</p>
+                <p style="font-size: 14px; color: #777; margin-top: 20px;">Best regards,<br/>The Dklean Team</p>
             </div>
+            <style>
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                    }
+                    to {
+                        opacity: 1;
+                    }
+                }
+            </style>
         `,
     };
 
@@ -43,6 +60,7 @@ const sendOtpEmailForgot = (to, otp, subject) => {
         }
     });
 };
+
 
 module.exports = {
     sendOtpEmailForgot

@@ -26,7 +26,7 @@ const ServiceSchema = new mongoose.Schema({
     type: [String], // Array of strings
     required: true
   },
-  serviveImg:{
+  serviceImg:{
     type:String,
   },
 });

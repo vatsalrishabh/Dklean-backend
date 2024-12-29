@@ -15,6 +15,7 @@ const generateOtp = () => Math.floor(100000 + Math.random() * 900000);
 //@ method POST api/auth/registerUser
 //@ access - PUBLIC
 const registerUser = handleErrorWrapper(async (req, res) => {
+    console.log(req.body)
     const { email, mobile, role } = req.body;
     if (await User.findOne({ $and: [{ email }, { role }] })) {
         return res.status(400).json({ message: 'User already registered. Please log in.' });
@@ -35,6 +36,7 @@ const registerUser = handleErrorWrapper(async (req, res) => {
 //@ method POST api/auth/verifyOtp
 //@ access - PUBLIC
 const verifyOtp = handleErrorWrapper(async (req, res) => {
+    console.log(req.body)
     const { email, otp, name, mobile, password, age, gender, role, address } = req.body;
 
     const validOtp = await Otp.findOneAndDelete({ email, otp });
@@ -62,9 +64,13 @@ const verifyOtp = handleErrorWrapper(async (req, res) => {
 //@ method POST api/auth/loginUser
 //@ access - PUBLIC
 const loginUser = handleErrorWrapper(async (req, res) => {
+    console.log(req.body)
     const { email, password, role  } = req.body;
    
     const user = await User.findOne({ email,role });
+    if(!user){
+        return res.status(404).json({message:'User not found! Please register.'})
+    }
     if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(400).json({ message: 'Invalid email or password.' });
     }
@@ -86,6 +92,7 @@ const loginUser = handleErrorWrapper(async (req, res) => {
 //@ access - PUBLIC
 const updatePassword = handleErrorWrapper(async (req, res) => {
     console.log(req.body)
+    console.log(req.body)
     const {  email,role } = req.body;
     const user = await User.findOne({ email , role});
 
@@ -106,7 +113,7 @@ const updatePassword = handleErrorWrapper(async (req, res) => {
 //@ method POST api/auth/updatePasswordOtp
 //@ access - PUBLIC
 const updatePasswordOtp = handleErrorWrapper(async (req, res) => {
-
+    console.log(req.body)
     const { email, password, otp,role } = req.body;
 
     const validOtp = await Otp.findOneAndDelete({ email, otp });

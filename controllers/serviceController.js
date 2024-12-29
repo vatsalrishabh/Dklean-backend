@@ -22,6 +22,7 @@ const getAllServices = handleErrorWrapper(async(req,res)=>{
 //@ method POST api/service/editAllServices
 //@ access - Admin
 const editAllServices = handleErrorWrapper(async (req, res) => {
+    console.log(req.body)
     const { serviceId, updates } = req.body;  // Destructure serviceId and updates from the request body
 
     // Ensure updates is an object and serviceId is provided
@@ -83,7 +84,7 @@ const postNewService = handleErrorWrapper(async (req, res) => {
 //@ access - Admin
 const deleteService = handleErrorWrapper(async (req, res) => {
     const { serviceId } = req.body;  // Destructure serviceId from the request body
-
+console.log(req.body);
     // Ensure the serviceId is provided
     if (!serviceId) {
         return res.status(400).json({ message: 'Service ID is required' });

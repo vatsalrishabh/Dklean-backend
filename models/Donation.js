@@ -4,12 +4,10 @@ const mongoose = require('mongoose');
 const donationSchema = new mongoose.Schema({
   donorName: {
     type: String,
-    required: true,
     trim: true, // Ensures no extra spaces at the start or end
   },
   donorEmail: {
     type: String,
-    required: true,
     unique: true, // Ensures no duplicate email addresses
     lowercase: true, // Converts the email to lowercase
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'], // Email validation
@@ -35,7 +33,7 @@ const donationSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['credit_card', 'paypal', 'bank_transfer', 'other'], // Specifies payment methods
+    enum: ['credit_card', 'paypal', 'bank_transfer', 'upi'], // Specifies payment methods
   },
   anonymous: {
     type: Boolean,

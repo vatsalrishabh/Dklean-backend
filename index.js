@@ -31,6 +31,7 @@ const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const donationRoutes = require('./routes/donationRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 // const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // Use routes
@@ -38,6 +39,7 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // app.use('/api/dashboard', dashboardRoutes);
 

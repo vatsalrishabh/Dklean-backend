@@ -1,23 +1,27 @@
 const Razorpay = require('razorpay');
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
+const Payment = require("../models/Payment")
 
-const Payment = require('../models/Payment');
-const DateBookings = require('../models/DateBookings');
+// const Payment = require('../models/Payment');
+// const DateBookings = require('../models/DateBookings');
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
-  key_id: 'rzp_live_1MxULmQnXguann', 
-  key_secret: '8WyMGYphteSpi3rBUw6zD8fC', 
-  // key_id: 'rzp_test_l0gnUnaG8U4VmM', 
-  // key_secret: '5ji43g1ji2Hnz1f1DJWpNX4T', 
+  // key_id: 'rzp_live_1MxULmQnXguann', 
+  // key_secret: '8WyMGYphteSpi3rBUw6zD8fC', 
+  
+  key_id:process.env.RAZORPAY_KEY_ID, 
+  key_secret: process.env.RAZORPAY_KEY_SECRET, 
 });
+
 
 // Function to create an order
 const createOrder = async (req, res) => {
   console.log(req.body+"The create order api is triggered");
   try {
     const { amount, currency, receipt, notes } = req.body;
-    console.log(amount+" "+currency+" "+receipt+" "+notes+" "+"The create order api is triggered");
+    console.log( amount+ currency+receipt+ notes ); //receipt - BK202501251000-161224162952539
+    console.log(notes); //  { patientId: '111224144500777', name: 'Dimple Ka', patientEmail: 'vatsalrishabh00@gmail.com', serviceId: 'SVC2', serviceName: 'General Consultation', doctorId: '161224162952539', doctor: 'Vatsal Rishabh', date: '25-01-2025', time: '10:00 - 11:00' }
 
     const options = {
       amount: amount * 100, // Convert amount to paise
@@ -25,16 +29,29 @@ const createOrder = async (req, res) => {
       receipt,
       notes,
     };
-
     const order = await razorpay.orders.create(options);
 
-    const bookingId = receipt;
-    const receiptDetails = await Payment.findOne({ bookingId: receipt });
-    
-    // Check if the receipt already exists
-  
-      await Payment.create({ amount, currency, bookingId, notes, razorOrderId: order.id });
+  // from here store it in Payment Collection
+  const bookingId = receipt;
 
+  await Payment.create({
+    amount,
+    currency,
+    receipt: bookingId,
+    notes,
+    razorOrderId: order.id,
+    patientId: notes.patientId,
+    patientName: notes.name,
+    patientEmail: notes.patientEmail,
+    serviceId: notes.serviceId,
+    serviceName: notes.serviceName,
+    doctorId: notes.doctorId,
+    doctorName: notes.doctor,
+    date: notes.date,
+    time: notes.time,
+    googleMeet: "Na",
+    status: 'pending',
+  });
 
     res.json(order); // Send order details to frontend, including order ID
   } catch (error) {
@@ -94,36 +111,39 @@ const verifyPayment = async (req, res) => {
     const isValidSignature = validateWebhookSignature(body, razorpay_signature, secret);
     
     if (isValidSignature) {
-      const paymentRecord = await Payment.findOne({ razorOrderId: razorpay_order_id });
+      console.log(isValidSignature);
+      console.log(payment_status);
+      
+      // const paymentRecord = await Payment.findOne({ razorOrderId: razorpay_order_id });
 
-      if (paymentRecord) {
-        if (payment_status === 'failed') {
-          await Payment.updateOne(
-            { razorOrderId: razorpay_order_id },
-            { $set: { razorPaymentId: razorpay_payment_id, status: 'failed', updatedAt: Date.now() } }
-          );
-        } else {
-          await Payment.updateOne(
-            { razorOrderId: razorpay_order_id },
-            { $set: { razorPaymentId: razorpay_payment_id, status: 'success', updatedAt: Date.now() } }
-          );
+      // if (paymentRecord) {
+      //   if (payment_status === 'failed') {
+      //     await Payment.updateOne(
+      //       { razorOrderId: razorpay_order_id },
+      //       { $set: { razorPaymentId: razorpay_payment_id, status: 'failed', updatedAt: Date.now() } }
+      //     );
+      //   } else {
+      //     await Payment.updateOne(
+      //       { razorOrderId: razorpay_order_id },
+      //       { $set: { razorPaymentId: razorpay_payment_id, status: 'success', updatedAt: Date.now() } }
+      //     );
 
-          console.log(+paymentRecord.bookingId);
-          await DateBookings.updateOne(
-            { "slots.bookingId": paymentRecord.bookingId }, // Match the booking date and booking ID
-            {
-              $set: {
-                "slots.$.status": "booked", // Update the status of the matched slot
-                "slots.$.bookedOn": new Date() // Set the booking date to the current date/time
-              }
-            }
-          );
+      //     console.log(+paymentRecord.bookingId);
+      //     await DateBookings.updateOne(
+      //       { "slots.bookingId": paymentRecord.bookingId }, // Match the booking date and booking ID
+      //       {
+      //         $set: {
+      //           "slots.$.status": "booked", // Update the status of the matched slot
+      //           "slots.$.bookedOn": new Date() // Set the booking date to the current date/time
+      //         }
+      //       }
+      //     );
           
          
 
 
-        }
-      }
+      //   }
+      // }
       res.status(200).json({ status: 'ok' });
       console.log("Payment verification successful");
     } else {

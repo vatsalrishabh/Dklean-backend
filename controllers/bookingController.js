@@ -11,30 +11,30 @@ const allBookings = handleErrorWrapper(async (req, res) => {
     const allBooking = await DateBookings.find();
     const doctors = await User.find({ role: 'doctor' });
 
-    // Map the doctorId to the doctor's name for easier lookup
+    // Map doctorId to an object containing doctor's name and blocked status
     const doctorMap = doctors.reduce((acc, doctor) => {
-      acc[doctor.userId] = doctor.name; // Assuming `userId` is the field that matches `doctorId`
+      acc[doctor.userId] = {
+        doctorName: doctor.name,
+        blocked: doctor.blocked, // Include blocked status
+      };
       return acc;
     }, {});
 
-    // Map through all the bookings and add the doctor's name to the response
-    const list = allBooking.map(booking => {
-      return {
-        date: booking.date,
-        slots: booking.slots.map(slot => {
-          return {
-            time: slot.time,
-            doctors: slot.doctors.map(doctor => ({
-              doctorId: doctor.doctorId,
-              doctorName: doctorMap[doctor.doctorId] || 'Unknown', // Add the doctor's name if found
-              status: doctor.status,
-              bookedBy: doctor.bookedBy,
-              bookingId: doctor.bookingId,
-            }))
-          };
-        })
-      };
-    });
+    // Map through all the bookings and add the doctor's name and blocked status
+    const list = allBooking.map(booking => ({
+      date: booking.date,
+      slots: booking.slots.map(slot => ({
+        time: slot.time,
+        doctors: slot.doctors.map(doctor => ({
+          doctorId: doctor.doctorId,
+          doctorName: doctorMap[doctor.doctorId]?.doctorName || 'Unknown', // Add the doctor's name if found
+          blocked: doctorMap[doctor.doctorId]?.blocked ?? false, // Default to false if doctor not found
+          status: doctor.status,
+          bookedBy: doctor.bookedBy,
+          bookingId: doctor.bookingId,
+        }))
+      }))
+    }));
 
     // Send the response with the data
     res.status(200).json({ message: 'success', data: list });
@@ -43,6 +43,7 @@ const allBookings = handleErrorWrapper(async (req, res) => {
     res.status(500).json({ message: 'Error fetching bookings' });
   }
 });
+
 
 
 module.exports = {

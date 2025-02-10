@@ -11,7 +11,7 @@ router.get('/getAllServices',authenticateJWT,authorizeRoles('user','admin'), get
 
 router.post('/editAllServices',authenticateJWT,authorizeRoles('admin'), editAllServices); // api/auth/registerUser
 
-router.post('/postNewService',authenticateJWT,authorizeRoles('admin'), postNewService); // api/auth/registerUser
+router.post('/postNewService', postNewService); // api/auth/registerUser
 
 router.delete('/deleteService',authenticateJWT,authorizeRoles('admin'), deleteService); // api/auth/registerUser
 

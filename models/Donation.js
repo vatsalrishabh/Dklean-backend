@@ -31,10 +31,7 @@ const donationSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed'], // Defines valid payment statuses
     default: 'pending', // Default value
   },
-  paymentMethod: {
-    type: String,
-    enum: ['credit_card', 'paypal', 'bank_transfer', 'upi'], // Specifies payment methods
-  },
+ 
   anonymous: {
     type: Boolean,
     default: false, // Default is false, meaning the donor is not anonymous
@@ -48,6 +45,7 @@ const donationSchema = new mongoose.Schema({
     required: true, // Razorpay payment ID
     unique: true, // Ensures each donation has a unique Razorpay ID
   },
+  userId:{type:String},
   transactionId: {
     type: String,
     required: true, // Razorpay transaction ID

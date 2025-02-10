@@ -2,6 +2,7 @@ const Razorpay = require('razorpay');
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
 const Donation = require('../models/Donation');
 const { handleErrorWrapper } = require('../middleware/errorHandler');
+const User = require('../models/User');
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -99,9 +100,61 @@ const paymentSuccess = (req, res) => {
   `);
 };
 
+// @Method-GET
+// @access-Admin,donor
+// @Route-api/donations/donorDetails
+const donorDetails = async (req, res) => {
+  try {
+    const { userId } = req.query; // Extract from query parameters
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    let donor = await User.findOne({ userId });
+    donor = donor.toObject(); // Convert Mongoose document to a plain object
+    delete donor.password;
+
+    if (!donor) {
+      return res.status(404).json({ message: "Donor not found or unauthorized." });
+    }
+
+    res.status(200).json({
+      message: "Donor details fetched successfully",
+      donor
+    });
+  } catch (error) {
+    console.error("Error fetching donor details:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+// @Method-POST
+// @access-donor
+// @Route-api/donations/donateNow
+const donateNow = async (req, res) => {
+  try {
+    console.log(req.body);
+    const { userId, amount,  } = req.body; // Extract from query parameters
+    if (!userId) {
+      // proceed to anonymous payment
+      console.log("id is there");
+      return res.status(200).json({message:"Donation Successful", data:"donation DATA"});
+    }
+    console.log("no id ");
+    // if userId is there then do payment with the data 
+  } catch (error) {
+    console.error("Error fetching donor details:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 // Export functions
 module.exports = {
   createOrder,
   verifyPayment,
   paymentSuccess,
+  donorDetails,
+  donateNow,
 };

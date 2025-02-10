@@ -22,6 +22,9 @@ const ServiceSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  description:{
+    type: String,
+  },
   doctorIds: {
     type: [String], // Array of strings
     required: true

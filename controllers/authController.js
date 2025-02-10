@@ -53,6 +53,7 @@ const verifyOtp = handleErrorWrapper(async (req, res) => {
         age,
         gender,
         role,
+        blocked: role === "doctor", 
         address: address || { street: "NA", city: "NA", state: "NA", zipCode: "NA", country: "NA" }
     });
     await newUser.save();
@@ -128,10 +129,78 @@ const updatePasswordOtp = handleErrorWrapper(async (req, res) => {
     res.status(200).json({ message: 'Password updated successfully.' });
 });
 
+
+//@desc- add a doctor without otp
+//@ method POST api/auth/admin/addDoctor
+//@ access - Admin
+const addDoctor = handleErrorWrapper(async (req, res) => {
+    const { doctorEmail, doctorPassword, license, doctorName, doctorSex, doctorMobile, role, address } = req.body;
+    const existingDoctor = await User.findOne({ 
+        $or: [{ email: doctorEmail }, { license: license }] 
+    });
+
+    if (existingDoctor) {
+        return res.status(400).json({ message: "Doctor with the same email or license already exists." });
+    }
+
+    const hashedPassword = await bcrypt.hash(doctorPassword, 10);
+
+    const newUser = new User({
+        userId: await generateUniqueId(),
+        name: doctorName,
+        email: doctorEmail,
+        mobile: doctorMobile,
+        password: hashedPassword,
+        license,
+        age: null, // Fix: Set age to null instead of "NA"
+        gender: doctorSex.toLowerCase(), // Fix: Convert to lowercase
+        role: role === 'physio' ? 'doctor' : role, // Fix: Map 'physio' to 'doctor'
+        address: address || { street: "NA", city: "NA", state: "NA", zipCode: "NA", country: "NA" }
+    });
+
+    await newUser.save();
+    res.status(200).json({ message: 'Doctor added successfully.' });
+});
+
+//@desc- change blocked to true or false 
+//@ method POST api/auth/admin/apprDoctor
+//@ access - Admin
+const apprDoctor = handleErrorWrapper(async (req, res) => {
+    const { userId, role, blocked } = req.body;
+
+    // Check if the user exists and is a doctor
+    const doctor = await User.findOne({ userId, role: 'doctor' });
+
+    if (!doctor) {
+        return res.status(404).json({ message: "Doctor not found." });
+    }
+
+    // Update the blocked status
+    doctor.blocked = blocked;
+    await doctor.save();
+    const allDoctors = await User.find({role: 'doctor'})
+    res.status(200).json({ message: `Doctor ${blocked ? 'blocked' : 'approved'} successfully.`, data:allDoctors });
+});
+
+//@desc- get a list of all doctores
+//@ method GET api/auth/admin/getAllDoctors
+//@ access - Admin
+const getAllDoctors = handleErrorWrapper(async (req, res) => {
+    const allDoctors = await User.find({role: 'doctor'})
+    res.status(200).json({ message: "All docotrs fetched " , data:allDoctors });
+});
+
+
+
+
+
 module.exports = {
     registerUser,
     verifyOtp,
     loginUser,
     updatePassword,
-    updatePasswordOtp
+    updatePasswordOtp,
+    addDoctor,
+    apprDoctor,
+    getAllDoctors,
 };

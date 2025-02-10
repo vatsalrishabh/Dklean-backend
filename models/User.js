@@ -16,10 +16,12 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true},
   password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'user', 'donor','doctor','subadmin'], default: 'user' },
+  license:{type: String,},
   mobile: { type: String },
   gender: { type: String, enum: ['male', 'female', 'prefer not to say'] },
   address: AddressSchema,
   age: { type: Number },
+  pancard: { type: String },
   blocked: {type:Boolean, required:true, default:false},
 });
 

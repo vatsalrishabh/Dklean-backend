@@ -157,6 +157,71 @@ const verifyPayment = async (req, res) => {
 };
 
 
+//@access - patient
+//@req- GET
+//api- api/payments/patientBookings
+const patientBookings = async (req, res) => {
+  try {
+    const { patientId } = req.query;
+
+    // Validate patientId
+    if (!patientId) {
+      return res.status(400).json({ success: false, message: "Missing patientId parameter" });
+    }
+
+    // Find payments for the given patient
+    const payments = await Payment.find({ patientId });
+
+    if (!payments.length) {
+      return res.status(404).json({ success: false, message: "No bookings found for this patient" });
+    }
+
+    // Success response
+    return res.status(200).json({ 
+      success: true, 
+      message: "Patient bookings retrieved successfully", 
+      payments 
+    });
+
+  } catch (error) {
+    console.error("Error fetching patient bookings:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
+  }
+};
+
+
+const doctorBookings= async (req,res)=>{
+  try{
+
+  }catch(error){
+
+  }
+}
+const adminBookings = async (req, res) => {
+  console.log(req.query)
+  try {
+    const { patientId } = req.query;
+    let query = {};
+
+    if (patientId) {
+      if (!/^\d{15}$/.test(patientId)) {
+        return res.status(400).json({ error: "Invalid Patient ID" });
+      }
+      query.patientId = patientId;
+    }
+
+    const appointments = await Payment.find(query);
+    return res.status(200).json({ payments: appointments });
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 
 // Exporting the functions
@@ -164,4 +229,7 @@ module.exports = {
   createOrder,
   verifyPayment,
   paymentSuccess,
+  patientBookings,
+  doctorBookings,
+  adminBookings,
 };

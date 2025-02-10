@@ -51,10 +51,31 @@
     //@ access - Admin
     const postNewService = handleErrorWrapper(async (req, res) => {
         console.log(req.body);
-      
+        const { name, price, category, location, doctorIds } = req.body;  // Destructure service details from the request body
+
+        // Ensure the required fields are present
+        if (!name || !price ) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        // Generate unique serviceId
+        const number = await Service.countDocuments({}) + 1;
+        const serviceId = `SVC${number}`;
+        const newService = new Service({
+            serviceId, 
+            name:"NewService", 
+            price:100, 
+            category:"blood", 
+            location:"Delhi", 
+            doctorIds:[], 
+            serviveImg:"",
+        });
+
+        // Save the service to the database
+        await newService.save();
 
         // Respond with success message
-        res.status(201).json({ message: 'Service created successfully'});
+        res.status(201).json({ message: 'Service created successfully', service: newService });
     
     });
 

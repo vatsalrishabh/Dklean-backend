@@ -12,10 +12,10 @@ const { createOrder,
 router.post('/createOrder', createOrder);   //BaseUrl/api/donations/create-order
 
 // Route to handle payment verification
-router.post('/verifyPayment',verifyPayment);  //http://localhost:3000/api/donations/create-order
+router.post('/verifyPayment',verifyPayment);  //http://localhost:3000/api/donations/verifyPayment 
 
 
-router.post('/paymentSuccess',paymentSuccess);  //http://localhost:3000/api/donations/payment-success
+router.post('/paymentSuccess',paymentSuccess);  //http://localhost:3000/api/donations/paymentSuccess
 
 router.get('/donorDetails',donorDetails);  //http://localhost:3000/api/donations/donorDetails
 

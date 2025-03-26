@@ -5,9 +5,12 @@ const { handleErrorWrapper } = require('../middleware/errorHandler');
 const User = require('../models/User');
 
 // Initialize Razorpay
+
+console.log(process.env.RAZORPAY_KEY_ID);
+console.log(process.env.RAZORPAY_KEY_SECRET);
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID, // Use environment variables
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: "rzp_test_l0gnUnaG8U4VmM", // Use environment variables
+  key_secret: "5ji43g1ji2Hnz1f1DJWpNX4T",
 });
 
 // Function to create an order
@@ -43,11 +46,14 @@ const createOrder = handleErrorWrapper(async (req, res) => {
   res.json(order);
 });
 
-// Function to verify payment
+// @Method-POST
+// @access-donor
+// @Route-api/donations/verifyPayment
 const verifyPayment = handleErrorWrapper(async (req, res) => {
-    console.log("git the api cerify")
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, payment_status } = req.body;
+  console.log(`Payment Status: ${payment_status}`);
 
+  // Validate Razorpay signature
   const isValidSignature = validateWebhookSignature(
     `${razorpay_order_id}|${razorpay_payment_id}`,
     razorpay_signature,
@@ -55,28 +61,44 @@ const verifyPayment = handleErrorWrapper(async (req, res) => {
   );
 
   if (!isValidSignature) {
-    return res.status(400).json({ status: 'verification_failed' });
+    return res.status(400).json({ status: 'verification_failed', message: 'Invalid signature' });
   }
 
+  // Find the donation record associated with the order
   const donationRecord = await Donation.findOne({ razorpayId: razorpay_order_id });
+
   if (!donationRecord) {
     return res.status(404).json({ error: 'Donation record not found' });
   }
 
-  // Update payment status
+  // Determine payment status (use Razorpay's response)
   const status = payment_status === 'failed' ? 'failed' : 'completed';
-  await Donation.updateOne(
-    { razorpayId: razorpay_order_id },
+
+  // Update the donation collection with payment status & transaction ID
+  const updatedDonation = await Donation.findOneAndUpdate(
+    { razorpayId: razorpay_order_id }, // Find donation by Razorpay Order ID
     {
       paymentStatus: status,
-      transactionId: razorpay_payment_id,
-    }
+      transactionId: razorpay_payment_id, // Store Razorpay payment ID as transaction ID
+      paymentDate: new Date(),
+    },
+    { new: true } // Return the updated document
   );
 
-  res.status(200).json({ status: 'ok', message: 'Payment verification successful' });
+  console.log(`Donation updated successfully:`, updatedDonation);
+
+  // Send response back to frontend
+  res.status(200).json({
+    status: 'ok',
+    message: 'Payment verification successful',
+    updatedDonation,
+  });
 });
 
-// Function to render payment success page
+
+// @Method-POST
+// @access-donor
+// @Route-api/donations/paymentSuccess
 const paymentSuccess = (req, res) => {
     console.log("git the api sycess payment")
   res.send(`
@@ -107,8 +129,55 @@ const donorDetails = async (req, res) => {
   try {
     const { userId } = req.query; // Extract from query parameters
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      const everyTran = await Donation.find({});
+      return res.status(200).json({ message: "Data of all the users", everyTran });
     }
+
+// FIND ALL TRANSACTIONS 
+const allTransactions = await Donation.find({ userId });
+const monthNames = [
+  "", "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+const transactions = await Donation.aggregate([
+  {
+    $match: { userId: userId } // match all the documents of this userId similar to find({userId})
+  },
+  {
+    $project: {
+      _id: 0,
+      amount: "$donationAmount",
+      monthIndex: { $toInt: { $dateToString: { format: "%m", date: "$donationDate" } } },
+      day: { $dateToString: { format: "%d", date: "$donationDate" } },
+      year: { $dateToString: { format: "%Y", date: "$donationDate" } },
+      status: {
+        $cond: {
+          if: { $eq: ["$paymentStatus", "pending"] },
+          then: "Pending",
+          else: "Completed"
+        }
+      },
+      transactionId: { $concat: ["#", "$transactionId"] }
+    }
+  }
+]);
+
+// **Map month index to full month name in JavaScript**
+transactions.forEach(t => {
+  t.date = `${t.day} ${monthNames[t.monthIndex]}, ${t.year}`;
+  delete t.day;
+  delete t.monthIndex;
+  delete t.year;
+});
+
+console.log(transactions);
+
+
+
+
+
+// FIND ALL TRANSACTIONS ENDS
 
     let donor = await User.findOne({ userId });
     donor = donor.toObject(); // Convert Mongoose document to a plain object
@@ -120,7 +189,8 @@ const donorDetails = async (req, res) => {
 
     res.status(200).json({
       message: "Donor details fetched successfully",
-      donor
+      donor,
+      transactions,allTransactions
     });
   } catch (error) {
     console.error("Error fetching donor details:", error);
@@ -134,20 +204,72 @@ const donorDetails = async (req, res) => {
 // @Route-api/donations/donateNow
 const donateNow = async (req, res) => {
   try {
-    console.log(req.body);
-    const { userId, amount,  } = req.body; // Extract from query parameters
-    if (!userId) {
-      // proceed to anonymous payment
-      console.log("id is there");
-      return res.status(200).json({message:"Donation Successful", data:"donation DATA"});
+    const { userId, amount, name ,dob ,email, mobile, address, pancard,pincode, city,state, country} = req.body; // Extract from query parameters
+    
+    // Build the update object dynamically
+    const updateFields = {};
+    if (pancard) updateFields.pancard = pancard;
+    if (mobile) updateFields.mobile = mobile;
+    if (name) updateFields.name = name;
+    if (email) updateFields.email = email;
+    if (dob) updateFields.dob = dob;
+    
+    // Update nested address fields only if provided
+    if (address || pincode || city || state || country) {
+      updateFields.address = {};
+      if (address) updateFields.address.street = address;
+      if (pincode) updateFields.address.zipCode = pincode;
+      if (city) updateFields.address.city = city;
+      if (state) updateFields.address.state = state;
+      if (country) updateFields.address.country = country;
     }
-    console.log("no id ");
-    // if userId is there then do payment with the data 
+    
+    const userDetail = await User.findOneAndUpdate(
+      { userId }, // Find user by userId
+      { $set: updateFields }, // Only update provided fields
+      { new: true, upsert: true } // Return updated document & create if not found
+    );
+
+    const options = {
+      amount: amount * 100, // Convert amount to paise
+      currency:"INR",
+      receipt:"REC0012",
+      notes:{
+        userId,
+      },
+    }; //. razorpay 111111111111111111111111111111111111111111
+    const order = await razorpay.orders.create(options);
+    console.log(order+"content of order");
+   // Get the count of donations to generate transaction ID
+   const donationCount = await Donation.countDocuments();
+   const transactionId = `TRN${donationCount + 1}`;
+
+   // Save the donation details
+   const donation = new Donation({
+     donorName: name || "Anonymous",
+     donorEmail: email || "NA",
+     donationAmount: amount,
+     donationDate: Date.now(),
+     donationMessage: "Donation for trust",
+     paymentStatus: "pending",
+     anonymous: userId ? false : true,
+     razorpayId: order?.id,
+     userId: userId,
+     transactionId: transactionId,
+   });
+
+   await donation.save();
+   console.log(order); 
+    res.json(order);  //{id:'order_sDfsdfsf' status:'created' it has offer_id:'' which can be learnt about } mainly two things are sent 
+
+    
   } catch (error) {
     console.error("Error fetching donor details:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
 
 
 // Export functions

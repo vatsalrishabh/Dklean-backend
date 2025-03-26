@@ -1,8 +1,8 @@
-const Razorpay = require('razorpay');
+const Razorpay = require('razorpay'); 
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
 const Payment = require("../models/Payment")
 
-// const Payment = require('../models/Payment');
+
 // const DateBookings = require('../models/DateBookings');
 
 // Initialize Razorpay

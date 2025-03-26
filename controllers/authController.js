@@ -4,7 +4,7 @@ const User = require('../models/User');
 const Otp = require('../models/Otp');
 const { generateUniqueId } = require('./uniqueIdGenerator');
 const { handleErrorWrapper } = require('../middleware/errorHandler');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { makeJwtToken } = require('../utils/jwtToken');
 
 const SUBJECT = "Your OTP for PulseCare.";

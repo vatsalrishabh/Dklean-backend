@@ -8,7 +8,6 @@ const donationSchema = new mongoose.Schema({
   },
   donorEmail: {
     type: String,
-    unique: true, // Ensures no duplicate email addresses
     lowercase: true, // Converts the email to lowercase
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'], // Email validation
   },
@@ -43,13 +42,13 @@ const donationSchema = new mongoose.Schema({
   razorpayId: {
     type: String,
     required: true, // Razorpay payment ID
-    unique: true, // Ensures each donation has a unique Razorpay ID
+    unique: true, 
   },
   userId:{type:String},
   transactionId: {
     type: String,
     required: true, // Razorpay transaction ID
-    unique: true, // Ensures each transaction has a unique ID
+    unique: true, 
   },
 });
 

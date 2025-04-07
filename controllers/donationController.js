@@ -270,6 +270,33 @@ const donateNow = async (req, res) => {
 };
 
 
+// @Method - GET
+// @access - donor
+// @Route - /api/donations/donationReceipt or /donationReceipt/:transactionId
+
+const donationReceipt = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    const { email } = req.query; // Assuming you pass email in the frontend query
+
+    if (transactionId) {
+      const receipt = await Donation.findOne({ razorpayId: transactionId });
+      if (!receipt) return res.status(404).json({ message: "Receipt not found." });
+      return res.status(200).json(receipt);
+    }
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required to fetch user-specific receipts." });
+    }
+
+    const userReceipts = await Donation.find({ donorEmail: email }).sort({ donationDate: -1 });
+    return res.status(200).json(userReceipts);
+  } catch (error) {
+    console.error("Error fetching donation receipt(s):", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 
 
 // Export functions
@@ -279,4 +306,5 @@ module.exports = {
   paymentSuccess,
   donorDetails,
   donateNow,
+  donationReceipt,
 };

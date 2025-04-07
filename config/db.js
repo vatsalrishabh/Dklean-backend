@@ -10,11 +10,11 @@ require('dotenv').config();
 // const uri = process.env.MONGO_URI;
 // const uri = "mongodb://dkleanhealthcare_dkleandbuser:agLrP7x!5@198.38.87.182:27017/dkleanhealthcare_dkleandb";
 
-// const uri = "mongodb://dkleanhealthcare_dkleandbuser:agLrP7x!5@localhost:27017/dkleanhealthcare_dkleandb";
+const uri = "mongodb://dkleanhealthcare_dkleandbuserr:Dklean2025@localhost:27017/dkleanhealthcare_dkleandbb";
 
 
 
-const uri = "mongodb://localhost:27017/DKlean";
+// const uri = "mongodb://localhost:27017/DKlean";
 
 
 // Connect to MongoDB

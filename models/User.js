@@ -20,6 +20,8 @@ const UserSchema = new mongoose.Schema({
   mobile: { type: String },
   gender: { type: String, enum: ['male', 'female', 'prefer not to say'] },
   address: AddressSchema,
+  latitude: { type: String },
+  longitude : { type: String },
   age: { type: Number },
   pancard: { type: String },
   blocked: {type:Boolean, required:true, default:false},

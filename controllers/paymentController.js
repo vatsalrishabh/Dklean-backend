@@ -1,6 +1,7 @@
 const Razorpay = require('razorpay'); 
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
-const Payment = require("../models/Payment")
+const Payment = require("../models/Payment");
+const DateBookings = require("../models/DateBookings");
 
 
 // const DateBookings = require('../models/DateBookings');
@@ -103,6 +104,7 @@ const paymentSuccess = async (req, res) => {
 // Function to verify payment
 const verifyPayment = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, payment_status } = req.body;
+  console.log(`Order ID: ${razorpay_order_id}, Payment ID: ${razorpay_payment_id}, Signature: ${razorpay_signature}, Status: ${payment_status}`);
 
   const secret = razorpay.key_secret;
   const body = razorpay_order_id + '|' + razorpay_payment_id;
@@ -111,39 +113,35 @@ const verifyPayment = async (req, res) => {
     const isValidSignature = validateWebhookSignature(body, razorpay_signature, secret);
     
     if (isValidSignature) {
-      console.log(isValidSignature);
-      console.log(payment_status);
-      
-      // const paymentRecord = await Payment.findOne({ razorOrderId: razorpay_order_id });
+      const paymentRecord = await Payment.findOne({ razorOrderId: razorpay_order_id });
+      console.log(paymentRecord+"Payment record ")
 
-      // if (paymentRecord) {
-      //   if (payment_status === 'failed') {
-      //     await Payment.updateOne(
-      //       { razorOrderId: razorpay_order_id },
-      //       { $set: { razorPaymentId: razorpay_payment_id, status: 'failed', updatedAt: Date.now() } }
-      //     );
-      //   } else {
-      //     await Payment.updateOne(
-      //       { razorOrderId: razorpay_order_id },
-      //       { $set: { razorPaymentId: razorpay_payment_id, status: 'success', updatedAt: Date.now() } }
-      //     );
+      if (paymentRecord) {
+        if (payment_status === 'failed') {
+          await Payment.updateOne(
+            { razorOrderId: razorpay_order_id },
+            { $set: { razorPaymentId: razorpay_payment_id, status: 'failed', updatedAt: Date.now() } }
+          );
+        } else {
+          await Payment.updateOne(
+            { razorOrderId: razorpay_order_id },
+            { $set: { razorPaymentId: razorpay_payment_id, status: 'success', updatedAt: Date.now() } }
+          );
 
-      //     console.log(+paymentRecord.bookingId);
-      //     await DateBookings.updateOne(
-      //       { "slots.bookingId": paymentRecord.bookingId }, // Match the booking date and booking ID
-      //       {
-      //         $set: {
-      //           "slots.$.status": "booked", // Update the status of the matched slot
-      //           "slots.$.bookedOn": new Date() // Set the booking date to the current date/time
-      //         }
-      //       }
-      //     );
-          
-         
+          console.log(`Booking ID: ${paymentRecord.bookingId}`);
 
-
-      //   }
-      // }
+          // Corrected MongoDB update query to update the correct slot
+          await DateBookings.updateOne(
+            { "slots.bookingId": paymentRecord.bookingId }, 
+            { 
+              $set: { 
+                "slots.$.status": "booked",
+                "slots.$.bookedOn": new Date() 
+              } 
+            }
+          );
+        }
+      }
       res.status(200).json({ status: 'ok' });
       console.log("Payment verification successful");
     } else {
@@ -155,6 +153,7 @@ const verifyPayment = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Error verifying payment' });
   }
 };
+
 
 
 //@access - patient

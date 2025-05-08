@@ -2,6 +2,7 @@ const Razorpay = require('razorpay');
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
 const Donation = require('../models/Donation');
 const { handleErrorWrapper } = require('../middleware/errorHandler');
+const {sendReceiptToCx} = require("../utils/donationReceipt");
 const User = require('../models/User');
 
 // Initialize Razorpay
@@ -205,6 +206,7 @@ console.log(transactions);
 const donateNow = async (req, res) => {
   try {
     const { userId, amount, name ,dob ,email, mobile, address, pancard,pincode, city,state, country} = req.body; // Extract from query parameters
+    console.log(req.body);
     
     // Build the update object dynamically
     const updateFields = {};
@@ -256,6 +258,12 @@ const donateNow = async (req, res) => {
      razorpayId: order?.id,
      userId: userId,
      transactionId: transactionId,
+     mobile:mobile,
+     panCard:pancard,
+     pincode: pincode,
+     city: city,
+     state: state,
+     country:country,
    });
 
    await donation.save();
@@ -278,18 +286,26 @@ const donationReceipt = async (req, res) => {
   try {
     const { transactionId } = req.params;
     const { email } = req.query; // Assuming you pass email in the frontend query
+// console.log(email)
+// console.log(transactionId)
 
     if (transactionId) {
       const receipt = await Donation.findOne({ razorpayId: transactionId });
       if (!receipt) return res.status(404).json({ message: "Receipt not found." });
+     
+
+   
+   
+      await sendReceiptToCx(["dkleanhealthcare@gmail.com",receipt.donorEmail], receipt);
       return res.status(200).json(receipt);
     }
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required to fetch user-specific receipts." });
-    }
-
+  
+    
     const userReceipts = await Donation.find({ donorEmail: email }).sort({ donationDate: -1 });
+   
+ 
+
     return res.status(200).json(userReceipts);
   } catch (error) {
     console.error("Error fetching donation receipt(s):", error);

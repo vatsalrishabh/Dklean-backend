@@ -7,7 +7,7 @@ const {  getAllServices,
 const { authenticateJWT, authorizeRoles } = require('../middleware/rbacMiddleware')
 
 // Register user
-router.get('/getAllServices',authenticateJWT,authorizeRoles('user','admin'), getAllServices); // api/auth/registerUser
+router.get('/getAllServices', getAllServices); // api/auth/registerUser
 
 router.post('/editAllServices',authenticateJWT,authorizeRoles('admin'), editAllServices); // api/auth/registerUser
 

@@ -14,6 +14,7 @@ const ServiceSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  discount:String,
   category: {
     type: String,
     required: true

@@ -48,4 +48,5 @@ const allBookings = handleErrorWrapper(async (req, res) => {
 
 module.exports = {
   allBookings,
+  
 };

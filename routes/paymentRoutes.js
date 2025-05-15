@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, verifyPayment, paymentSuccess, patientBookings, doctorBookings,adminBookings} = require('../controllers/paymentController');
+const { createOrder, verifyPayment, paymentSuccess, patientBookings, doctorBookings,adminBookings, sendMailToCx} = require('../controllers/paymentController');
 const { authenticateJWT, authorizeRoles } = require('../middleware/rbacMiddleware')
 
 
@@ -15,9 +15,13 @@ router.post('/payment-success',paymentSuccess);  //http://localhost:3000/api/pay
 
 router.get('/patientBookings',patientBookings);  //http://localhost:3000/api/payments/patientBookings
 
-router.get('/doctorBookings',authenticateJWT,authorizeRoles('dcotor','admin'),doctorBookings);  //http://localhost:3000/api/payments/doctorBookings
+// router.get('/doctorBookings',authenticateJWT,authorizeRoles('dcotor','admin'),doctorBookings);  //http://localhost:3000/api/payments/doctorBookings
+
+router.get('/doctorBookings', doctorBookings);  //http://localhost:3000/api/payments/doctorBookings
 
 router.get('/adminBookings',adminBookings);  //http://localhost:3000/api/payments/adminBookings
+
+router.post('/sendMailToCx',sendMailToCx); //http://localhost:3000/api/payments/sendMailToCx
 
  
 

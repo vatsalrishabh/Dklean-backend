@@ -1,7 +1,9 @@
 const Razorpay = require('razorpay'); 
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
 const Payment = require("../models/Payment");
+const {receiptToCx} = require("../utils/receiptToCx");
 const DateBookings = require("../models/DateBookings");
+const User = require("../models/User");
 
 
 // const DateBookings = require('../models/DateBookings');
@@ -21,8 +23,8 @@ const createOrder = async (req, res) => {
   console.log(req.body+"The create order api is triggered");
   try {
     const { amount, currency, receipt, notes } = req.body;
-    console.log( amount+ currency+receipt+ notes ); //receipt - BK202501251000-161224162952539
-    console.log(notes); //  { patientId: '111224144500777', name: 'Dimple Ka', patientEmail: 'vatsalrishabh00@gmail.com', serviceId: 'SVC2', serviceName: 'General Consultation', doctorId: '161224162952539', doctor: 'Vatsal Rishabh', date: '25-01-2025', time: '10:00 - 11:00' }
+    // console.log( amount+ currency+receipt+ notes ); receipt - BK202501251000-161224162952539
+   // console.log(notes);   { patientId: '111224144500777', name: 'Dimple Ka', patientEmail: 'vatsalrishabh00@gmail.com', serviceId: 'SVC2', serviceName: 'General Consultation', doctorId: '161224162952539', doctor: 'Vatsal Rishabh', date: '25-01-2025', time: '10:00 - 11:00' }
 
     const options = {
       amount: amount * 100, // Convert amount to paise
@@ -104,7 +106,7 @@ const paymentSuccess = async (req, res) => {
 // Function to verify payment
 const verifyPayment = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, payment_status } = req.body;
-  console.log(`Order ID: ${razorpay_order_id}, Payment ID: ${razorpay_payment_id}, Signature: ${razorpay_signature}, Status: ${payment_status}`);
+ // console.log(`Order ID: ${razorpay_order_id}, Payment ID: ${razorpay_payment_id}, Signature: ${razorpay_signature}, Status: ${payment_status}`);
 
   const secret = razorpay.key_secret;
   const body = razorpay_order_id + '|' + razorpay_payment_id;
@@ -142,6 +144,8 @@ const verifyPayment = async (req, res) => {
           );
         }
       }
+
+
       res.status(200).json({ status: 'ok' });
       console.log("Payment verification successful");
     } else {
@@ -154,6 +158,23 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+ 
+const sendMailToCx = async (req , res) =>{
+  try{
+    const patientDetails = req.body;
+
+    if (!patientDetails?.bookedBy || !patientDetails?.doctorName || !patientDetails?.serviceFromRedux) {
+      return res.status(400).json({ message: "Incomplete booking details." });
+    }
+    const doctorDetails = await User.findOne({userId:patientDetails.doctorId});//get doctor Details
+
+    await receiptToCx(["dkleanhealthcare@gmail.com",patientDetails.email,doctorDetails.email], patientDetails);
+
+  }catch(error){
+    console.error("Failed to send email:", error);
+    res.status(500).json({ message: "Email sending failed" });
+  }
+}
 
 
 //@access - patient
@@ -192,14 +213,43 @@ const patientBookings = async (req, res) => {
   }
 };
 
-
+//@access - patient
+//@req- GET
+//api- api/payments/doctorBookings 
 const doctorBookings= async (req,res)=>{
-  try{
+ try {
+    const { doctorId } = req.query;
 
-  }catch(error){
+    // Validate patientId
+    if (!doctorId) {
+      return res.status(400).json({ success: false, message: "Missing patientId parameter" });
+    }
 
+    // Find payments for the given patient
+    const payments = await Payment.find({ doctorId });
+
+    if (!payments.length) {
+      return res.status(404).json({ success: false, message: "No bookings found for this patient" });
+    }
+
+    // Success response
+    return res.status(200).json({ 
+      success: true, 
+      message: "Patient bookings retrieved successfully", 
+      payments 
+    });
+
+  } catch (error) {
+    console.error("Error fetching patient bookings:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
   }
 }
+
+
 const adminBookings = async (req, res) => {
   console.log(req.query)
   try {
@@ -231,4 +281,5 @@ module.exports = {
   patientBookings,
   doctorBookings,
   adminBookings,
+  sendMailToCx
 };

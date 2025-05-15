@@ -7,7 +7,8 @@ const {   registerUser,
     updatePasswordOtp,
     addDoctor, 
     apprDoctor,
-    getAllDoctors} = require('../controllers/authController');
+    getAllDoctors,
+updateDonorDetails} = require('../controllers/authController');
 const {authenticateJWT, authorizeRoles} = require('../middleware/rbacMiddleware')
 
 // Register user
@@ -21,6 +22,8 @@ router.post('/loginUser', loginUser); // api/auth/loginUser
 router.post('/updatePassword', updatePassword); // api/auth/updatePassword
 
 router.post('/updatePasswordOtp', updatePasswordOtp); // api/auth/updatePasswordOtp
+
+router.post('/updateDonorDetails', updateDonorDetails); // api/auth/updateDonorDetails
 
 router.post('/admin/addDoctor',authenticateJWT,authorizeRoles('admin'),addDoctor); // api/auth/admin/addDoctor
 

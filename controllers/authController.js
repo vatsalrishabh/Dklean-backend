@@ -129,6 +129,30 @@ const updatePasswordOtp = handleErrorWrapper(async (req, res) => {
     res.status(200).json({ message: 'Password updated successfully.' });
 });
 
+//@desc- update the donor details 
+//@ method POST api/auth/updateDonorDetails
+//@ access - DONOR
+const updateDonorDetails = handleErrorWrapper(async (req, res) => {
+  const { userId, name, email, mobile, gender, age, pancard } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
+  const updatedDonor = await User.findOneAndUpdate(
+    { userId },
+    { name, email, mobile, gender, age, pancard },
+    { new: true }
+  );
+
+  if (!updatedDonor) {
+    return res.status(404).json({ message: "Donor not found" });
+  }
+
+  res.status(200).json({ message: "Donor details updated successfully", data: updatedDonor });
+});
+
+
 
 //@desc- add a doctor without otp
 //@ method POST api/auth/admin/addDoctor
@@ -203,4 +227,5 @@ module.exports = {
     addDoctor,
     apprDoctor,
     getAllDoctors,
+    updateDonorDetails,
 };

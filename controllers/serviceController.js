@@ -49,35 +49,45 @@
     //@desc- post new service
     //@ method POST api/service/postNewService
     //@ access - Admin
-    const postNewService = handleErrorWrapper(async (req, res) => {
-        console.log(req.body);
-        const { name, price, category, location, doctorIds } = req.body;  // Destructure service details from the request body
+  const postNewService = handleErrorWrapper(async (req, res) => {
+  console.log(req.body);
+  const { name, price, category, location, doctorIds, description } = req.body;
 
-        // Ensure the required fields are present
-        if (!name || !price ) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
+  if (!name || !price) {
+    return res.status(400).json({ message: 'Name and price are required' });
+  }
 
-        // Generate unique serviceId
-        const number = await Service.countDocuments({}) + 1;
-        const serviceId = `SVC${number}`;
-        const newService = new Service({
-            serviceId, 
-            name:"NewService", 
+  // Find the highest-numbered serviceId
+  const allServices = await Service.find({}).lean();
+  let maxIdNumber = 0;
+
+  allServices.forEach(service => {
+    const match = service.serviceId.match(/^SVC(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1]);
+      if (num > maxIdNumber) maxIdNumber = num;
+    }
+  });
+
+  const serviceId = `SVC${maxIdNumber + 1}`;
+
+  const newService = new Service({
+    serviceId,
+    name:"NewService", 
             price:100, 
             category:"blood", 
             location:"Delhi", 
             doctorIds:[], 
             serviveImg:"",
-        });
+    description: description || 'option1, option2, option3',
+  
+  });
 
-        // Save the service to the database
-        await newService.save();
+  await newService.save();
 
-        // Respond with success message
-        res.status(201).json({ message: 'Service created successfully', service: newService });
-    
-    });
+  res.status(201).json({ message: 'Service created successfully', service: newService });
+});
+
 
 
     //@desc- post new service

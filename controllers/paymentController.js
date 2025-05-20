@@ -1,7 +1,7 @@
-const Razorpay = require('razorpay'); 
+const Razorpay = require('razorpay');
 const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
 const Payment = require("../models/Payment");
-const {receiptToCx} = require("../utils/receiptToCx");
+const { receiptToCx } = require("../utils/receiptToCx");
 const DateBookings = require("../models/DateBookings");
 const User = require("../models/User");
 
@@ -12,19 +12,19 @@ const User = require("../models/User");
 const razorpay = new Razorpay({
   // key_id: 'rzp_live_1MxULmQnXguann', 
   // key_secret: '8WyMGYphteSpi3rBUw6zD8fC', 
-  
-  key_id:process.env.RAZORPAY_KEY_ID, 
-  key_secret: process.env.RAZORPAY_KEY_SECRET, 
+
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 
 // Function to create an order
 const createOrder = async (req, res) => {
-  console.log(req.body+"The create order api is triggered");
+  console.log(req.body + "The create order api is triggered");
   try {
     const { amount, currency, receipt, notes } = req.body;
     // console.log( amount+ currency+receipt+ notes ); receipt - BK202501251000-161224162952539
-   // console.log(notes);   { patientId: '111224144500777', name: 'Dimple Ka', patientEmail: 'vatsalrishabh00@gmail.com', serviceId: 'SVC2', serviceName: 'General Consultation', doctorId: '161224162952539', doctor: 'Vatsal Rishabh', date: '25-01-2025', time: '10:00 - 11:00' }
+    // console.log(notes);   { patientId: '111224144500777', name: 'Dimple Ka', patientEmail: 'vatsalrishabh00@gmail.com', serviceId: 'SVC2', serviceName: 'General Consultation', doctorId: '161224162952539', doctor: 'Vatsal Rishabh', date: '25-01-2025', time: '10:00 - 11:00' }
 
     const options = {
       amount: amount * 100, // Convert amount to paise
@@ -34,27 +34,27 @@ const createOrder = async (req, res) => {
     };
     const order = await razorpay.orders.create(options);
 
-  // from here store it in Payment Collection
-  const bookingId = receipt;
+    // from here store it in Payment Collection
+    const bookingId = receipt;
 
-  await Payment.create({
-    amount,
-    currency,
-    receipt: bookingId,
-    notes,
-    razorOrderId: order.id,
-    patientId: notes.patientId,
-    patientName: notes.name,
-    patientEmail: notes.patientEmail,
-    serviceId: notes.serviceId,
-    serviceName: notes.serviceName,
-    doctorId: notes.doctorId,
-    doctorName: notes.doctor,
-    date: notes.date,
-    time: notes.time,
-    googleMeet: "Na",
-    status: 'pending',
-  });
+    await Payment.create({
+      amount,
+      currency,
+      receipt: bookingId,
+      notes,
+      razorOrderId: order.id,
+      patientId: notes.patientId,
+      patientName: notes.name,
+      patientEmail: notes.patientEmail,
+      serviceId: notes.serviceId,
+      serviceName: notes.serviceName,
+      doctorId: notes.doctorId,
+      doctorName: notes.doctor,
+      date: notes.date,
+      time: notes.time,
+      googleMeet: "Na",
+      status: 'pending',
+    });
 
     res.json(order); // Send order details to frontend, including order ID
   } catch (error) {
@@ -106,17 +106,17 @@ const paymentSuccess = async (req, res) => {
 // Function to verify payment
 const verifyPayment = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, payment_status } = req.body;
- // console.log(`Order ID: ${razorpay_order_id}, Payment ID: ${razorpay_payment_id}, Signature: ${razorpay_signature}, Status: ${payment_status}`);
+  // console.log(`Order ID: ${razorpay_order_id}, Payment ID: ${razorpay_payment_id}, Signature: ${razorpay_signature}, Status: ${payment_status}`);
 
   const secret = razorpay.key_secret;
   const body = razorpay_order_id + '|' + razorpay_payment_id;
 
   try {
     const isValidSignature = validateWebhookSignature(body, razorpay_signature, secret);
-    
+
     if (isValidSignature) {
       const paymentRecord = await Payment.findOne({ razorOrderId: razorpay_order_id });
-      console.log(paymentRecord+"Payment record ")
+      console.log(paymentRecord + "Payment record ")
 
       if (paymentRecord) {
         if (payment_status === 'failed') {
@@ -130,16 +130,20 @@ const verifyPayment = async (req, res) => {
             { $set: { razorPaymentId: razorpay_payment_id, status: 'success', updatedAt: Date.now() } }
           );
 
-          console.log(`Booking ID: ${paymentRecord.bookingId}`);
+          console.log(`Booking ID: ${paymentRecord.receipt}`);
 
           // Corrected MongoDB update query to update the correct slot
           await DateBookings.updateOne(
-            { "slots.bookingId": paymentRecord.bookingId }, 
-            { 
-              $set: { 
-                "slots.$.status": "booked",
-                "slots.$.bookedOn": new Date() 
-              } 
+            { "slots.doctors.bookingId": paymentRecord.receipt },
+            {
+              $set: {
+                "slots.$[].doctors.$[doc].status": "booked",
+              }
+            },
+            {
+              arrayFilters: [
+                { "doc.bookingId":paymentRecord.receipt  }
+              ]
             }
           );
         }
@@ -158,19 +162,19 @@ const verifyPayment = async (req, res) => {
   }
 };
 
- 
-const sendMailToCx = async (req , res) =>{
-  try{
+
+const sendMailToCx = async (req, res) => {
+  try {
     const patientDetails = req.body;
 
     if (!patientDetails?.bookedBy || !patientDetails?.doctorName || !patientDetails?.serviceFromRedux) {
       return res.status(400).json({ message: "Incomplete booking details." });
     }
-    const doctorDetails = await User.findOne({userId:patientDetails.doctorId});//get doctor Details
+    const doctorDetails = await User.findOne({ userId: patientDetails.doctorId });//get doctor Details
 
-    await receiptToCx(["dkleanhealthcare@gmail.com",patientDetails.email,doctorDetails.email], patientDetails);
+    await receiptToCx(["dkleanhealthcare@gmail.com", patientDetails.email, doctorDetails.email], patientDetails);
 
-  }catch(error){
+  } catch (error) {
     console.error("Failed to send email:", error);
     res.status(500).json({ message: "Email sending failed" });
   }
@@ -197,18 +201,18 @@ const patientBookings = async (req, res) => {
     }
 
     // Success response
-    return res.status(200).json({ 
-      success: true, 
-      message: "Patient bookings retrieved successfully", 
-      payments 
+    return res.status(200).json({
+      success: true,
+      message: "Patient bookings retrieved successfully",
+      payments
     });
 
   } catch (error) {
     console.error("Error fetching patient bookings:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
     });
   }
 };
@@ -216,8 +220,8 @@ const patientBookings = async (req, res) => {
 //@access - patient
 //@req- GET
 //api- api/payments/doctorBookings 
-const doctorBookings= async (req,res)=>{
- try {
+const doctorBookings = async (req, res) => {
+  try {
     const { doctorId } = req.query;
 
     // Validate patientId
@@ -233,18 +237,18 @@ const doctorBookings= async (req,res)=>{
     }
 
     // Success response
-    return res.status(200).json({ 
-      success: true, 
-      message: "Patient bookings retrieved successfully", 
-      payments 
+    return res.status(200).json({
+      success: true,
+      message: "Patient bookings retrieved successfully",
+      payments
     });
 
   } catch (error) {
     console.error("Error fetching patient bookings:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
     });
   }
 }
